@@ -94,5 +94,95 @@
         "Kaameraan cufameera.";
     }
   </script>
+  
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "tola-video-call.firebaseapp.com",
+  databaseURL: "https://tola-video-call-default-rtdb.firebaseio.com",
+  projectId: "tola-video-call",
+  storageBucket: "tola-video-call.firebasestorage.app",
+  messagingSenderId: "945271717745",
+  appId: "YOUR_APP_ID"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+const auth = firebase.auth();
+
+let currentRoom = "";
+let currentUser = "";
+let chatListener = null;
+
+async function ensureLogin() {
+  if (!auth.currentUser) {
+    await auth.signInAnonymously();
+  }
+  currentUser = auth.currentUser.uid;
+}
+
+function createRoom() {
+  const room = Math.random().toString(36).substring(2, 8).toUpperCase();
+  document.getElementById("roomId").value = room;
+  joinRoom();
+}
+
+async function joinRoom() {
+  try {
+    await ensureLogin();
+    const room = document.getElementById("roomId").value.trim().toUpperCase();
+    if (!room) {
+      alert("Maaloo Room ID galchi.");
+      return;
+    }
+    currentRoom = room;
+    await db.ref("rooms/" + room + "/members/" + currentUser)
+      .set({ joinedAt: firebase.database.ServerValue.TIMESTAMP });
+
+    if (chatListener) {
+      db.ref("rooms/" + room + "/messages").off("child_added", chatListener);
+    }
+
+    document.getElementById("chatMessages").innerHTML = "";
+    chatListener = snap => {
+      const msg = snap.val();
+      const line = document.createElement("p");
+      line.textContent = (msg.name || "Nama") + ": " + (msg.text || "");
+      document.getElementById("chatMessages").appendChild(line);
+    };
+    db.ref("rooms/" + room + "/messages").limitToLast(50)
+      .on("child_added", chatListener);
+
+    document.getElementById("status").textContent = "Room " + room + " keessa jirta.";
+  } catch (e) {
+    document.getElementById("status").textContent = "Dogoggora Firebase: " + e.message;
+  }
+}
+
+async function sendMessage() {
+  try {
+    await ensureLogin();
+    if (!currentRoom) {
+      alert("Dura Room ID seeni.");
+      return;
+    }
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const name = document.getElementById("name").value.trim() || "Nama";
+    await db.ref("rooms/" + currentRoom + "/messages").push({
+      uid: currentUser,
+      name,
+      text,
+      time: firebase.database.ServerValue.TIMESTAMP
+    });
+    input.value = "";
+  } catch (e) {
+    document.getElementById("status").textContent = "Ergaa erguun hin milkoofne: " + e.message;
+  }
+}
+  
 </body>
 </html>
