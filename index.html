@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tola Video Call</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 25px;
+      font-family: Arial, sans-serif;
+      background: #101827;
+      color: white;
+      text-align: center;
+    }
+    .app {
+      max-width: 450px;
+      margin: 30px auto;
+      padding: 25px;
+      background: #1e293b;
+      border-radius: 18px;
+    }
+    h1 { color: #38bdf8; }
+    input, button {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0;
+      border: 0;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+    button {
+      background: #0284c7;
+      color: white;
+      font-weight: bold;
+    }
+    #status { color: #facc15; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>📹 Tola Video Call</h1>
+    <p>Chat, sagalee fi viidiyoodhaan wal qunnamaa.</p>
+
+    <input id="name" placeholder="Maqaa kee galchi">
+    <button onclick="startApp()">Jalqabi</button>
+
+    <p id="status">Baga nagaan dhuftan!</p>
+
+    <video id="video" autoplay playsinline
+      muted style="width:100%;border-radius:12px;background:#000">
+    </video>
+
+    <button onclick="startCamera()">Kaameraa Bani</button>
+    <button onclick="stopCamera()">Kaameraa Cufi</button>
+  </div>
+
+  <script>
+    let stream;
+
+    function startApp() {
+      const name = document.getElementById("name").value.trim();
+      if (!name) {
+        document.getElementById("status").textContent =
+          "Maaloo maqaa kee galchi.";
+        return;
+      }
+      document.getElementById("status").textContent =
+        "Nagaa " + name + "! Appiin banameera.";
+    }
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true, audio: true
+        });
+        document.getElementById("video").srcObject = stream;
+        document.getElementById("status").textContent =
+          "Kaameraa fi sagaleen banamaniiru.";
+      } catch (error) {
+        document.getElementById("status").textContent =
+          "Kaameraa banuuf hayyama kenni; HTTPS irratti fayyadami.";
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      document.getElementById("video").srcObject = null;
+      document.getElementById("status").textContent =
+        "Kaameraan cufameera.";
+    }
+  </script>
+</body>
+</html>
