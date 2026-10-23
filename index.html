@@ -1,23 +1,181 @@
-document.getElementById("status").textContent = "Room " + room + " keessa jirta.";
-  } catch (e) {
-    document.getElementById("status").textContent = "Dogoggora Firebase: " + e.message;
-  }
+<!DOCTYPE html>
+<html lang="om">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tola Video Call</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:16px;font-family:Arial,sans-serif;background:#101827;color:#fff}
+.app{max-width:520px;margin:16px auto;padding:20px;background:#1e293b;border-radius:18px}
+h1{color:#38bdf8;text-align:center}h2{font-size:20px;margin-bottom:8px}
+input,button{width:100%;padding:12px;margin:6px 0;border:0;border-radius:8px;font-size:16px}
+input{background:#f8fafc;color:#111827}button{background:#0284c7;color:#fff;font-weight:bold}
+.secondary{background:#475569}.danger{background:#b91c1c}#status{color:#facc15;overflow-wrap:anywhere}
+label{display:block;margin-top:10px;color:#cbd5e1}.videos{display:grid;gap:10px}
+video{width:100%;min-height:150px;background:#000;border-radius:12px}
+#chatMessages{height:180px;overflow:auto;background:#0f172a;padding:10px;border-radius:8px}
+.message{background:#263449;padding:8px;border-radius:8px;margin:6px 0;overflow-wrap:anywhere}
+.hint{font-size:13px;color:#cbd5e1;line-height:1.5}
+</style>
+</head>
+<body>
+<main class="app">
+<h1>ðŸ“¹ Tola Video Call</h1>
+<p>Chat, sagalee fi viidiyoodhaan wal qunnamaa.</p>
+<label for="name">Maqaa kee</label><input id="name" placeholder="Maqaa kee galchi">
+<button onclick="startApp()">Jalqabi</button>
+<p id="status">Baga nagaan dhuftan!</p>
+
+<h2>1. Room</h2>
+<input id="roomId" placeholder="Room ID, fakkeenyaaf ABC123" maxlength="20">
+<button onclick="createRoom()">Room haaraa uumi</button>
+<button class="secondary" onclick="joinRoom()">Room kana seeni</button>
+<p class="hint">Namni biraas Room ID wal fakkaatu galchee seenuu qaba.</p>
+
+<h2>2. Bilbila sagalee/viidiyoo</h2>
+<div class="videos">
+<div><label>Kaameraa kee</label><video id="localVideo" autoplay playsinline muted></video></div>
+<div><label>Nama biraa</label><video id="remoteVideo" autoplay playsinline></video></div>
+</div>
+<button onclick="startCamera()">Kaameraa fi maayikiroofonii bani</button>
+<button onclick="startCall()">Bilbila jalqabi</button>
+<button class="secondary" onclick="answerCall()">Bilbila dhufe deebisi</button>
+<button class="danger" onclick="hangUp()">Bilbila cufi</button>
+
+<h2>3. Chat</h2>
+<div id="chatMessages" aria-live="polite"></div>
+<input id="chatInput" placeholder="Ergaa barreessi..." maxlength="1000">
+<button onclick="sendMessage()">Ergaa ergi</button>
+<p class="hint">Firebase Console keessatti Anonymous sign-in dandeessisi. HTTPS irratti banuun barbaachisa. API key fi App ID dhugaa kee galchi.</p>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* Firebase Console > Project settings keessaa gatii sirrii galchi. */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "tola-video-call.firebaseapp.com",
+  databaseURL: "https://tola-video-call-default-rtdb.firebaseio.com",
+  projectId: "tola-video-call",
+  storageBucket: "tola-video-call.firebasestorage.app",
+  messagingSenderId: "945271717745",
+  appId: "YOUR_APP_ID"
+};
+
+let db, auth, currentRoom="", currentUser="", localStream=null, peer=null;
+let chatListener=null, pendingCandidates=[];
+const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
+const $=id=>document.getElementById(id);
+function status(s){$("status").textContent=s}
+try { firebase.initializeApp(firebaseConfig); db=firebase.database(); auth=firebase.auth(); }
+catch(e){status("Firebase qindaa'ina ilaali: "+e.message)}
+
+function startApp(){
+  const name=$("name").value.trim();
+  if(!name){status("Maaloo maqaa kee galchi.");return}
+  status("Nagaa "+name+"! Room uumi ykn Room seeni.");
 }
-
-async function sendMessage() {
-  try {
-    await ensureLogin();
-    if (!currentRoom) {
-      alert("Dura Room ID seeni.");
-      return;
-    }
-    const input = document.getElementById("chatInput");
-    const text = input.value.trim();
-    if (!text) return;
-
-    const name = document.getElementById("name").value.trim() || "Nama";
-    await db.ref("rooms/" + currentRoom + "/messages").push({
-      uid: currentUser,
-      name,
-      text,
-      time: firebas
+async function login(){
+  if(!auth) throw new Error("Firebase config sirrii miti.");
+  if(!auth.currentUser) await auth.signInAnonymously();
+  currentUser=auth.currentUser.uid;
+}
+function path(s){return "rooms/"+currentRoom+"/"+s}
+function createRoom(){
+  $("roomId").value=Math.random().toString(36).slice(2,8).toUpperCase();
+  joinRoom();
+}
+async function joinRoom(){
+  try{
+    await login();
+    const room=$("roomId").value.trim().toUpperCase();
+    if(!room){status("Room ID galchi ykn Room haaraa uumi.");return}
+    if(currentRoom && chatListener) db.ref("rooms/"+currentRoom+"/messages").off("child_added",chatListener);
+    currentRoom=room;
+    await db.ref(path("members/"+currentUser)).set({
+      name:$("name").value.trim()||"Nama",
+      joinedAt:firebase.database.ServerValue.TIMESTAMP
+    });
+    $("chatMessages").innerHTML="";
+    chatListener=snap=>{
+      const m=snap.val();if(!m)return;
+      const el=document.createElement("div");el.className="message";
+      el.textContent=(m.name||"Nama")+": "+(m.text||"");
+      $("chatMessages").appendChild(el);$("chatMessages").scrollTop=$("chatMessages").scrollHeight;
+    };
+    db.ref(path("messages")).limitToLast(100).on("child_added",chatListener);
+    status("Room "+room+" seente. Room ID nama ati qunnamtuuf ergi.");
+  }catch(e){status("Room seenuun hin milkoofne: "+e.message)}
+}
+async function sendMessage(){
+  try{
+    await login();if(!currentRoom){status("Dura Room seeni.");return}
+    const input=$("chatInput"), text=input.value.trim();if(!text)return;
+    await db.ref(path("messages")).push({
+      uid:currentUser,name:$("name").value.trim()||"Nama",text,
+      time:firebase.database.ServerValue.TIMESTAMP
+    });
+    input.value="";
+  }catch(e){status("Ergaa erguun hin milkoofne: "+e.message)}
+}
+async function startCamera(){
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error("HTTPS irratti bani ykn browser biraa yaali.");
+    if(localStream)localStream.getTracks().forEach(t=>t.stop());
+    localStream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    $("localVideo").srcObject=localStream;status("Kaameraa fi maayikiroofoniin banamaniiru.");
+  }catch(e){status("Kaameraa banuun hin milkoofne. Hayyama kenni: "+e.message)}
+}
+function makePeer(){
+  if(peer)peer.close();
+  peer=new RTCPeerConnection(rtcConfig);
+  peer.ontrack=e=>{if(e.streams[0])$("remoteVideo").srcObject=e.streams[0]};
+  peer.onicecandidate=e=>{
+    if(e.candidate && currentRoom && currentUser)
+      db.ref(path("candidates/"+currentUser)).push(e.candidate.toJSON());
+  };
+  if(localStream)localStream.getTracks().forEach(t=>peer.addTrack(t,localStream));
+  return peer;
+}
+async function startCall(){
+  try{
+    await login();if(!currentRoom)throw new Error("Dura Room seeni.");
+    if(!localStream){await startCamera();if(!localStream)return}
+    const pc=makePeer();pendingCandidates=[];
+    const offer=await pc.createOffer();await pc.setLocalDescription(offer);
+    await db.ref(path("call/offer")).set({
+      from:currentUser,sdp:{type:offer.type,sdp:offer.sdp},
+      time:firebase.database.ServerValue.TIMESTAMP
+    });
+    status("Bilbila jalqabde. Nama biraa Room kana seenee 'Bilbila dhufe deebisi' haa tuqu.");
+  }catch(e){status("Bilbila jalqabuun hin milkoofne: "+e.message)}
+}
+async function answerCall(){
+  try{
+    await login();if(!currentRoom)throw new Error("Dura Room seeni.");
+    if(!localStream){await startCamera();if(!localStream)return}
+    const snap=await db.ref(path("call/offer")).once("value"), offer=snap.val();
+    if(!offer?.sdp||offer.from===currentUser)throw new Error("Offer nama biraa hin argamne.");
+    const pc=makePeer();pendingCandidates=[];
+    await pc.setRemoteDescription(new RTCSessionDescription(offer.sdp));
+    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+    await db.ref(path("call/answer")).set({
+      from:currentUser,to:offer.from,sdp:{type:answer.type,sdp:answer.sdp},
+      time:firebase.database.ServerValue.TIMESTAMP
+    });
+    status("Deebii bilbilaa ergite. Walqunnamuun jalqabuu qaba.");
+  }catch(e){status("Bilbila deebisuun hin milkoofne: "+e.message)}
+}
+function hangUp(){
+  if(peer){peer.close();peer=null}
+  if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
+  $("localVideo").srcObject=null;$("remoteVideo").srcObject=null;
+  status("Bilbila cufte. Chat itti fufuu dandeessa.");
+}
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")sendMessage()});
+</script>
+</body>
+  </html>
+  
