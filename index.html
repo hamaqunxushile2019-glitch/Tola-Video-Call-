@@ -66,6 +66,7 @@ const firebaseConfig = {
 
 let db, auth, currentRoom="", currentUser="", localStream=null, peer=null;
 let chatListener=null, pendingCandidates=[];
+let candidateRef=null, candidateHandler=null, answerRef=null, answerHandler=null;
 const rtcConfig={iceServers:[{urls:"stun:stun.l.google.com:19302"}]};
 const $=id=>document.getElementById(id);
 function status(s){$("status").textContent=s}
