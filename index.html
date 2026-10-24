@@ -262,6 +262,7 @@ async function answerCall(){
 
     const answer = await pc.createAnswer();
     await pc.setRemoteDescription(new RTCSessionDescription(offer.sdp));
+    listenForCandidates(offer.from, pc);
     await pc.setLocalDescription(answer);
 
     await db.ref(path("call/answer")).set({
