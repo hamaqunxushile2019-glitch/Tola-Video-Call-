@@ -159,6 +159,30 @@ function makePeer(){
   return peer;
 }
   
+function listenForCandidates(remoteUid, pc){
+  if(candidateRef && candidateHandler){
+    candidateRef.off("child_added", candidateHandler);
+  }
+
+  candidateRef = db.ref(path("candidates/" + remoteUid));
+
+  candidateHandler = async snap => {
+    const candidate = snap.val();
+    if(!candidate || !pc.remoteDescription) return;
+
+    try{
+      await pc.addIceCandidate(
+        new RTCIceCandidate(candidate)
+      );
+    }catch(e){
+      console.error("ICE candidate error:", e);
+    }
+  };
+
+  candidateRef.on("child_added", candidateHandler);
+}
+  
+  
   
 
 async function startCall(){
