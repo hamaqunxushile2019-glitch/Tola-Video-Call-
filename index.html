@@ -203,22 +203,40 @@ async function startCall(){
   }
 }
   
+
 async function answerCall(){
   try{
-    await login();if(!currentRoom)throw new Error("Dura Room seeni.");
-    if(!localStream){await startCamera();if(!localStream)return}
-    const snap=await db.ref(path("call/offer")).once("value"), offer=snap.val();
-    if(!offer?.sdp||offer.from===currentUser)throw new Error("Offer nama biraa hin argamne.");
-    const pc=makePeer();pendingCandidates=[];
+    await login();
+    if(!currentRoom) throw new Error("Dura Room seeni.");
+    if(!localStream){
+      await startCamera();
+      if(!localStream) return;
+    }
+
+    const snap = await db.ref(path("call/offer")).once("value");
+    const offer = snap.val();
+    if(!offer?.sdp || offer.from === currentUser)
+      throw new Error("Offer nama biraa hin argamne.");
+
+    const pc = makePeer();
+
+    const answer = await pc.createAnswer();
     await pc.setRemoteDescription(new RTCSessionDescription(offer.sdp));
-    const answer=await pc.createAnswer();await pc.setLocalDescription(answer);
+    await pc.setLocalDescription(answer);
+
     await db.ref(path("call/answer")).set({
-      from:currentUser,to:offer.from,sdp:{type:answer.type,sdp:answer.sdp},
-      time:firebase.database.ServerValue.TIMESTAMP
+      from: currentUser,
+      to: offer.from,
+      sdp: {type: answer.type, sdp: answer.sdp},
+      time: firebase.database.ServerValue.TIMESTAMP
     });
-    status("Deebii bilbilaa ergite. Walqunnamuun jalqabuu qaba.");
-  }catch(e){status("Bilbila deebisuun hin milkoofne: "+e.message)}
+
+    status("Deebii bilbilaa ergeera. Walqunnamuun jalqabuu qaba.");
+  }catch(e){
+    status("Bilbila deebisuun hin milkoofne: " + e.message);
+  }
 }
+  
 function hangUp(){
   if(peer){peer.close();peer=null}
   if(localStream){localStream.getTracks().forEach(t=>t.stop());localStream=null}
