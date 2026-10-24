@@ -260,9 +260,13 @@ async function answerCall(){
 
     const pc = makePeer();
 
-    const answer = await pc.createAnswer();
-    await pc.setRemoteDescription(new RTCSessionDescription(offer.sdp));
-    listenForCandidates(offer.from, pc);
+    await pc.setRemoteDescription(
+  new RTCSessionDescription(offer.sdp)
+);
+
+listenForCandidates(offer.from, pc);
+
+const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
 
     await db.ref(path("call/answer")).set({
