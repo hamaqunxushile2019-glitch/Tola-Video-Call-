@@ -130,10 +130,12 @@ async function startCamera(){
   }catch(e){status("Kaameraa banuun hin milkoofne. Hayyama kenni: "+e.message)}
 }
 
+
 function makePeer(){
   if(peer) peer.close();
 
   peer = new RTCPeerConnection(rtcConfig);
+  pendingCandidates = [];
 
   peer.ontrack = e => {
     if(e.streams && e.streams[0]){
@@ -156,6 +158,7 @@ function makePeer(){
 
   return peer;
 }
+  
   
 async function startCall(){
   try{
