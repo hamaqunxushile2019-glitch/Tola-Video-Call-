@@ -159,6 +159,7 @@ function makePeer(){
   return peer;
 }
   
+
 function listenForCandidates(remoteUid, pc){
   if(candidateRef && candidateHandler){
     candidateRef.off("child_added", candidateHandler);
@@ -171,16 +172,15 @@ function listenForCandidates(remoteUid, pc){
     if(!candidate || !pc.remoteDescription) return;
 
     try{
-      await pc.addIceCandidate(
-        new RTCIceCandidate(candidate)
-      );
+      await pc.addIceCandidate(new RTCIceCandidate(candidate));
     }catch(e){
-      console.error("ICE candidate error:", e);
+      console.warn("ICE candidate hin dabalamin:", e.message);
     }
   };
 
   candidateRef.on("child_added", candidateHandler);
 }
+  
   
   
   
