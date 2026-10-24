@@ -185,10 +185,12 @@ function listenForCandidates(remoteUid, pc){
   
   
 
+
 async function startCall(){
   try{
     await login();
     if(!currentRoom) throw new Error("Dura Room seeni.");
+
     if(!localStream){
       await startCamera();
       if(!localStream) return;
@@ -197,35 +199,49 @@ async function startCall(){
     const pc = makePeer();
     pendingCandidates = [];
 
-    if(answerRef && answerHandler) answerRef.off("value", answerHandler);
+    if(answerRef && answerHandler){
+      answerRef.off("value", answerHandler);
+    }
+
     answerRef = db.ref(path("call/answer"));
+
     answerHandler = async snap => {
       const answer = snap.val();
+
       if(!answer || answer.to !== currentUser || !answer.sdp) return;
       if(pc.signalingState !== "have-local-offer") return;
+
       try{
-        await pc.setRemoteDescription(new RTCSessionDescription(answer.sdp));
+        await pc.setRemoteDescription(
+          new RTCSessionDescription(answer.sdp)
+        );
+
+        listenForCandidates(answer.from, pc);
+        status("Deebiin fudhatame. Walqunnamtii viidiyoo eegaa jira.");
       }catch(e){
         status("Deebii fudhachuun hin milkoofne: " + e.message);
       }
     };
+
     answerRef.on("value", answerHandler);
+
+    await db.ref(path("call/answer")).remove();
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
 
-    await db.ref(path("call/answer")).remove();
     await db.ref(path("call/offer")).set({
       from: currentUser,
       sdp: {type: offer.type, sdp: offer.sdp},
       time: firebase.database.ServerValue.TIMESTAMP
     });
 
-    status("Bilbila jalqabde. Nama biraa Room kana seenee 'Bilbila dhufe deebisi' haa tuqu.");
+    status("Bilbila jalqabde. Nama biraa Room kana seenee bilbila haa deebisu.");
   }catch(e){
     status("Bilbila jalqabuun hin milkoofne: " + e.message);
   }
 }
+  
   
 
 async function answerCall(){
