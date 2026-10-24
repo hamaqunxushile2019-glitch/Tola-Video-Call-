@@ -128,17 +128,34 @@ async function startCamera(){
     $("localVideo").srcObject=localStream;status("Kaameraa fi maayikiroofoniin banamaniiru.");
   }catch(e){status("Kaameraa banuun hin milkoofne. Hayyama kenni: "+e.message)}
 }
+
 function makePeer(){
-  if(peer)peer.close();
-  peer=new RTCPeerConnection(rtcConfig);
-  peer.ontrack=e=>{if(e.streams[0])$("remoteVideo").srcObject=e.streams[0]};
-  peer.onicecandidate=e=>{
-    if(e.candidate && currentRoom && currentUser)
-      db.ref(path("candidates/"+currentUser)).push(e.candidate.toJSON());
+  if(peer) peer.close();
+
+  peer = new RTCPeerConnection(rtcConfig);
+
+  peer.ontrack = e => {
+    if(e.streams && e.streams[0]){
+      $("remoteVideo").srcObject = e.streams[0];
+    }
   };
-  if(localStream)localStream.getTracks().forEach(t=>peer.addTrack(t,localStream));
+
+  peer.onicecandidate = e => {
+    if(e.candidate && currentRoom && currentUser){
+      db.ref(path("candidates/" + currentUser))
+        .push(e.candidate.toJSON());
+    }
+  };
+
+  if(localStream){
+    localStream.getTracks().forEach(track => {
+      peer.addTrack(track, localStream);
+    });
+  }
+
   return peer;
 }
+  
 async function startCall(){
   try{
     await login();if(!currentRoom)throw new Error("Dura Room seeni.");
