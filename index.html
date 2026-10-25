@@ -160,6 +160,7 @@ function makePeer(){
 }
   
 
+
 function listenForCandidates(remoteUid, pc){
   if(candidateRef && candidateHandler){
     candidateRef.off("child_added", candidateHandler);
@@ -170,10 +171,24 @@ function listenForCandidates(remoteUid, pc){
   candidateHandler = async snap => {
     const candidate = snap.val();
     if(!candidate) return;
-if(!pc.remoteDescription){
-  pendingCandidates.push(candidate);
-  return;
+
+    try{
+      if(!pc.remoteDescription){
+        pendingCandidates.push(candidate);
+        return;
+      }
+
+      await pc.addIceCandidate(
+        new RTCIceCandidate(candidate)
+      );
+    }catch(e){
+      console.warn("ICE candidate hin dabalamin:", e.message);
+    }
+  };
+
+  candidateRef.on("child_added", candidateHandler);
 }
+  
 
     try{
       await pc.addIceCandidate(new RTCIceCandidate(candidate));
