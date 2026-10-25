@@ -280,6 +280,14 @@ async function answerCall(){
 );
 
 listenForCandidates(offer.from, pc);
+    for (const candidate of pendingCandidates) {
+  try {
+    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+  } catch (e) {
+    console.warn("Candidate dabaluu hin dandeenye:", e.message);
+  }
+}
+pendingCandidates = [];
 
 const answer = await pc.createAnswer();
     await pc.setLocalDescription(answer);
