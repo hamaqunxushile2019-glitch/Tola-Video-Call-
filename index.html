@@ -169,7 +169,11 @@ function listenForCandidates(remoteUid, pc){
 
   candidateHandler = async snap => {
     const candidate = snap.val();
-    if(!candidate || !pc.remoteDescription) return;
+    if(!candidate) return;
+if(!pc.remoteDescription){
+  pendingCandidates.push(candidate);
+  return;
+}
 
     try{
       await pc.addIceCandidate(new RTCIceCandidate(candidate));
