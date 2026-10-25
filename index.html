@@ -65,34 +65,33 @@ let chatListener=null, candidateRef=null, candidateHandler=null;
 let answerRef=null, answerHandler=null, activeCallId=null;
 
 
-const rtcConfig = {
-  iceTransportPolicy: "relay",
+var myPeerConnection = new RTCPeerConnection({
   iceServers: [
     {
-      urls: "stun:stun.relay.metered.ca:80"
+      urls: "stun:stun.relay.metered.ca:80",
     },
     {
       urls: "turn:standard.relay.metered.ca:80",
-      username: "METERED_USERNAME_KEE",
-      credential: "METERED_CREDENTIAL_KEE"
+      username: "c7d56bdbc74e2c0323dcbaad",
+      credential: "h+DaQc+VSh77e3XL",
     },
     {
       urls: "turn:standard.relay.metered.ca:80?transport=tcp",
-      username: "METERED_USERNAME_KEE",
-      credential: "METERED_CREDENTIAL_KEE"
+      username: "c7d56bdbc74e2c0323dcbaad",
+      credential: "h+DaQc+VSh77e3XL",
     },
     {
       urls: "turn:standard.relay.metered.ca:443",
-      username: "METERED_USERNAME_KEE",
-      credential: "METERED_CREDENTIAL_KEE"
+      username: "c7d56bdbc74e2c0323dcbaad",
+      credential: "h+DaQc+VSh77e3XL",
     },
     {
       urls: "turns:standard.relay.metered.ca:443?transport=tcp",
-      username: "METERED_USERNAME_KEE",
-      credential: "METERED_CREDENTIAL_KEE"
-    }
-  ]
-};
+      username: "c7d56bdbc74e2c0323dcbaad",
+      credential: "h+DaQc+VSh77e3XL",
+    },
+  ],
+});
   
   
 const $=id=>document.getElementById(id);
