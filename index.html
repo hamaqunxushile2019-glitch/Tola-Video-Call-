@@ -226,6 +226,7 @@ async function startCall(){
 
     answerHandler = async snap => {
       const answer = snap.val();
+      console.log("ANSWER FIREBASE:", snap.val());
 
       if(!answer){
   status("Dogoggora: answer Firebase keessatti hin jiru.");
