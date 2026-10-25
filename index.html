@@ -63,33 +63,33 @@ const firebaseConfig = {
 let db, auth, currentRoom="", currentUser="", localStream=null, peer=null;
 let chatListener=null, candidateRef=null, candidateHandler=null;
 let answerRef=null, answerHandler=null, activeCallId=null;
-var myPeerConnection = new RTCPeerConnection({
+
+const rtcConfig = {
   iceServers: [
-    {
-      urls: "stun:stun.relay.metered.ca:80",
-    },
+    { urls: "stun:stun.relay.metered.ca:80" },
     {
       urls: "turn:standard.relay.metered.ca:80",
-      username: "c7d56bdbc74e2c0323dcbaad",
-      credential: "h+DaQc+VSh77e3XL",
+      username: "METERED_USERNAME_KEE",
+      credential: "METERED_CREDENTIAL_KEE"
     },
     {
       urls: "turn:standard.relay.metered.ca:80?transport=tcp",
-      username: "c7d56bdbc74e2c0323dcbaad",
-      credential: "h+DaQc+VSh77e3XL",
+      username: "METERED_USERNAME_KEE",
+      credential: "METERED_CREDENTIAL_KEE"
     },
     {
       urls: "turn:standard.relay.metered.ca:443",
-      username: "c7d56bdbc74e2c0323dcbaad",
-      credential: "h+DaQc+VSh77e3XL",
+      username: "METERED_USERNAME_KEE",
+      credential: "METERED_CREDENTIAL_KEE"
     },
     {
       urls: "turns:standard.relay.metered.ca:443?transport=tcp",
-      username: "c7d56bdbc74e2c0323dcbaad",
-      credential: "h+DaQc+VSh77e3XL",
-    },
-  ],
-});
+      username: "METERED_USERNAME_KEE",
+      credential: "METERED_CREDENTIAL_KEE"
+    }
+  ]
+};
+  
 const $=id=>document.getElementById(id);
 function status(s){$("status").textContent=s}
 try { firebase.initializeApp(firebaseConfig); db=firebase.database(); auth=firebase.auth(); }
