@@ -208,7 +208,18 @@ async function startCall(){
     answerHandler = async snap => {
       const answer = snap.val();
 
-      if(!answer || answer.to !== currentUser || !answer.sdp) return;
+      if(!answer){
+  status("Dogoggora: answer Firebase keessatti hin jiru.");
+  return;
+}
+if(answer.to !== currentUser){
+  status("Dogoggora: ID wal hin simne. to=" + answer.to + " | user=" + currentUser);
+  return;
+}
+if(!answer.sdp){
+  status("Dogoggora: SDP hin jiru.");
+  return;
+  }
       if(pc.signalingState !== "have-local-offer") return;
 
       try{
