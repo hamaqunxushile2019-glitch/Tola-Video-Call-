@@ -64,9 +64,13 @@ let db, auth, currentRoom="", currentUser="", localStream=null, peer=null;
 let chatListener=null, candidateRef=null, candidateHandler=null;
 let answerRef=null, answerHandler=null, activeCallId=null;
 
+
 const rtcConfig = {
+  iceTransportPolicy: "relay",
   iceServers: [
-    { urls: "stun:stun.relay.metered.ca:80" },
+    {
+      urls: "stun:stun.relay.metered.ca:80"
+    },
     {
       urls: "turn:standard.relay.metered.ca:80",
       username: "METERED_USERNAME_KEE",
@@ -89,6 +93,7 @@ const rtcConfig = {
     }
   ]
 };
+  
   
 const $=id=>document.getElementById(id);
 function status(s){$("status").textContent=s}
